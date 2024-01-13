@@ -1,0 +1,32 @@
+[
+    {
+        "name": "movie_id",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "movie_name",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "genre",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "release_date",
+        "type": "DATE",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "language",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "running_time",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+    }
+]

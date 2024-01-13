@@ -1,0 +1,27 @@
+[
+    {
+        "name": "rating_id",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "user_id",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "movie_id",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "rating",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "review_timestamp",
+        "type": "TIMESTAMP",
+        "mode": "REQUIRED"
+    }
+]
