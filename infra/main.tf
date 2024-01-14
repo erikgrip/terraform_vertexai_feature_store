@@ -7,8 +7,6 @@ resource "google_storage_bucket" "data" {
   provider = google                   # Can be left out if only using one provider
   name     = "example-bq-data-bucket" # Needs to be globally unique
   location = "europe-west1"
-
-
 }
 
 # Copy local data to bucket
@@ -119,11 +117,12 @@ resource "google_bigquery_table" "user_view" {
       {
         project = var.gcp_project
         dataset = google_bigquery_dataset.dataset.dataset_id
-        table = google_bigquery_table.user.table_id
+        table   = google_bigquery_table.user.table_id
       }
     )
     use_legacy_sql = false
   }
+  deletion_protection = false
 }
 
 resource "google_bigquery_table" "movie_view" {
@@ -136,7 +135,7 @@ resource "google_bigquery_table" "movie_view" {
       {
         project = var.gcp_project
         dataset = google_bigquery_dataset.dataset.dataset_id
-        table = google_bigquery_table.movie.table_id
+        table   = google_bigquery_table.movie.table_id
       }
     )
     use_legacy_sql = false
@@ -154,7 +153,7 @@ resource "google_bigquery_table" "user_rating_view" {
       {
         project = var.gcp_project
         dataset = google_bigquery_dataset.dataset.dataset_id
-        table = google_bigquery_table.rating.table_id
+        table   = google_bigquery_table.rating.table_id
       }
     )
     use_legacy_sql = false
