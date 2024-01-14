@@ -165,16 +165,84 @@ resource "google_bigquery_table" "user_rating_view" {
 ##### Vertex AI #####
 #-------------------#
 
-# Create Vertex AI Featurestore
-#resource "google_ai_platform_featurestore_featurestore" "featurestore" {
-#  provider        = google-beta
-#  project         = var.gcp_project
-#  region          = var.gcp_region
-#  featurestore_id = "example_featurestore"
-#  labels = {
-#    "example" = "true"
-#  }
-#}
+# Create Featurestore
+resource "google_vertex_ai_featurestore" "featurestore" {
+  provider = google-beta
+  name     = "example_featurestore"
+  region   = var.gcp_region
+  online_serving_config {
+    fixed_node_count = 1
+  }
+  force_destroy = true
+}
+
+# Create FeatureGroups
+resource "google_vertex_ai_feature_group" "user" {
+  name = "user_feature_group"
+  description = "Feature group with user features"
+  region = var.gcp_region
+  big_query {
+    big_query_source {
+        # The source table must have a column named 'feature_timestamp' of type TIMESTAMP.
+        input_uri = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_view.table_id}"
+    }
+    entity_id_columns = ["entity_id"]
+  }
+}
+
+resource "google_vertex_ai_feature_group" "movie" {
+  name = "movie_feature_group"
+  description = "Feature group with movie features"
+  region = var.gcp_region
+  big_query {
+    big_query_source {
+        input_uri = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.movie_view.table_id}"
+    }
+    entity_id_columns = ["entity_id"]
+  }
+}
+
+resource "google_vertex_ai_feature_group" "user_rating" {
+  name = "user_rating_feature_group"
+  description = "Feature group with user rating features"
+  region = var.gcp_region
+  big_query {
+    big_query_source {
+        input_uri = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_rating_view.table_id}"
+    }
+    entity_id_columns = ["entity_id"]
+  }
+}
+
+# Create Online Store
+resource "google_vertex_ai_feature_online_store" "featureonlinestore" {
+  provider = google-beta
+  name     = "example_feature_online_store_beta_bigtable"
+  region   = var.gcp_region
+  bigtable {
+    auto_scaling {
+      min_node_count         = 1
+      max_node_count         = 2
+      cpu_utilization_target = 80
+    }
+  }
+  force_destroy = true
+}
+
+# Create FeatureView
+# resource "google_vertex_ai_feature_online_store_featureview" "featureview" {
+#   provider = google
+#   name                 = "user_feature_view"
+#   region               = var.gcp_region
+#   feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
+#   sync_config {
+#     cron = "0 0 * * *"
+#   }
+#   big_query_source {
+#     uri               = "bq://${google_bigquery_table.tf-test-table.project}.${google_bigquery_table.tf-test-table.dataset_id}.${google_bigquery_table.tf-test-table.table_id}"
+#     entity_id_columns = ["entity_id"]
+#   }
+# }
 
 
 
