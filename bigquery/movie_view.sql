@@ -1,5 +1,5 @@
 SELECT
-    movie_id AS entity_id,
+    CAST(movie_id AS STRING) AS entity_id,  -- FeatureGruop ID must be string
     genre,
     release_date,
     language,

@@ -1,5 +1,5 @@
 SELECT
-    user_id AS entity_id,
+    CAST(user_id AS STRING) AS entity_id,
     username,
     email,
     age,

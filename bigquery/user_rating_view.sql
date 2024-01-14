@@ -1,5 +1,5 @@
 SELECT
-    user_id,
+    CAST(user_id AS STRING) AS entity_id,
     COUNT(rating) AS rating_count_90d,
     AVG(rating) AS avg_rating_90d,
     day AS feature_timestamp
