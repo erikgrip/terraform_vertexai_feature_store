@@ -1,4 +1,24 @@
 #-----------------#
+####### API #######
+#-----------------#
+
+# Enable required APIs
+resource "google_project_service" "bigquery" {
+  provider                   = google
+  project                    = var.gcp_project
+  service                    = "bigquery.googleapis.com"
+  disable_dependent_services = true
+}
+
+resource "google_project_service" "vertexai" {
+  provider                   = google
+  project                    = var.gcp_project
+  service                    = "aiplatform.googleapis.com"
+  disable_dependent_services = true
+}
+
+
+#-----------------#
 ##### Storage #####
 #-----------------#
 
@@ -40,6 +60,7 @@ resource "google_bigquery_dataset" "dataset" {
   provider   = google
   dataset_id = "example_dataset"
   location   = "EU"
+  depends_on = [google_project_service.bigquery]
 }
 
 # Create BigQuery tables
@@ -161,63 +182,104 @@ resource "google_bigquery_table" "user_rating_view" {
   deletion_protection = false
 }
 
+resource "google_bigquery_table" "user_rating_view_latest" {
+  provider   = google
+  dataset_id = google_bigquery_dataset.dataset.dataset_id
+  table_id   = "user_rating_view_latest"
+  view {
+    query = templatefile(
+      "../bigquery/user_rating_view_latest.sql",
+      {
+        project = var.gcp_project
+        dataset = google_bigquery_dataset.dataset.dataset_id
+        table   = google_bigquery_table.user_rating_view.table_id
+      }
+    )
+    use_legacy_sql = false
+  }
+  deletion_protection = false
+}
+
+
 #-------------------#
 ##### Vertex AI #####
 #-------------------#
 
-# Create Featurestore
-resource "google_vertex_ai_featurestore" "featurestore" {
-  provider = google-beta
-  name     = "example_featurestore"
-  region   = var.gcp_region
-  online_serving_config {
-    fixed_node_count = 1
-  }
-  force_destroy = true
-}
+## Create Featurestore
+#resource "google_vertex_ai_featurestore" "" {
+#  provider = google-beta
+#  name     = "example_featurestore"
+#  region   = var.gcp_region
+#  online_serving_config {
+#    fixed_node_count = 1
+#  }
+#  force_destroy = true
+#}
 
 # Create FeatureGroups
 resource "google_vertex_ai_feature_group" "user" {
-  name = "user_feature_group"
+  name        = "user_feature_group"
   description = "Feature group with user features"
-  region = var.gcp_region
+  region      = var.gcp_region
   big_query {
     big_query_source {
-        # The source table must have a column named 'feature_timestamp' of type TIMESTAMP.
-        input_uri = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_view.table_id}"
+      # The source table must have a column named 'feature_timestamp' of type TIMESTAMP.
+      input_uri = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_view.table_id}"
     }
     entity_id_columns = ["entity_id"]
   }
 }
 
 resource "google_vertex_ai_feature_group" "movie" {
-  name = "movie_feature_group"
+  name        = "movie_feature_group"
   description = "Feature group with movie features"
-  region = var.gcp_region
+  region      = var.gcp_region
   big_query {
     big_query_source {
-        input_uri = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.movie_view.table_id}"
+      input_uri = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.movie_view.table_id}"
     }
     entity_id_columns = ["entity_id"]
   }
 }
 
 resource "google_vertex_ai_feature_group" "user_rating" {
-  name = "user_rating_feature_group"
+  name        = "user_rating_feature_group"
   description = "Feature group with user rating features"
-  region = var.gcp_region
+  region      = var.gcp_region
   big_query {
     big_query_source {
-        input_uri = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_rating_view.table_id}"
+      input_uri = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_rating_view.table_id}"
     }
     entity_id_columns = ["entity_id"]
   }
 }
 
+# Create Feature Group Features
+resource "google_vertex_ai_feature_group_feature" "username" {
+  name          = "username"
+  region        = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.user.name
+  description   = "The user's username"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_vertex_ai_feature_group_feature" "email" {
+  name          = "email"
+  region        = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.user.name
+  description   = "The user's email address"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
+
 # Create Online Store
 resource "google_vertex_ai_feature_online_store" "featureonlinestore" {
   provider = google-beta
-  name     = "example_feature_online_store_beta_bigtable"
+  name     = "example_online_store"
   region   = var.gcp_region
   bigtable {
     auto_scaling {
@@ -227,22 +289,38 @@ resource "google_vertex_ai_feature_online_store" "featureonlinestore" {
     }
   }
   force_destroy = true
+  depends_on    = [google_project_service.vertexai]
 }
 
-# Create FeatureView
-# resource "google_vertex_ai_feature_online_store_featureview" "featureview" {
-#   provider = google
-#   name                 = "user_feature_view"
-#   region               = var.gcp_region
-#   feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
-#   sync_config {
-#     cron = "0 0 * * *"
-#   }
-#   big_query_source {
-#     uri               = "bq://${google_bigquery_table.tf-test-table.project}.${google_bigquery_table.tf-test-table.dataset_id}.${google_bigquery_table.tf-test-table.table_id}"
-#     entity_id_columns = ["entity_id"]
-#   }
-# }
+# Create FeatureViews
+resource "google_vertex_ai_feature_online_store_featureview" "user_featureview" {
+  provider             = google
+  name                 = "user_featureview"
+  region               = var.gcp_region
+  feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
+  sync_config {
+    cron = "1/5 * * * *" # every 5th minute
+  }
+  big_query_source {
+    uri               = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_view.table_id}"
+    entity_id_columns = ["entity_id"]
+  }
+}
+
+resource "google_vertex_ai_feature_online_store_featureview" "user_rating_featureview_latest" {
+  provider             = google
+  name                 = "user_rating_featureview_latest"
+  region               = var.gcp_region
+  feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
+  sync_config {
+    cron = "1/5 * * * *" # every 5th minute
+  }
+  big_query_source {
+    uri               = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_rating_view.table_id}"
+    entity_id_columns = ["entity_id"]
+  }
+
+}
 
 
 

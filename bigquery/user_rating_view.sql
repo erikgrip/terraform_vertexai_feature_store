@@ -16,7 +16,7 @@ FROM (
         )
     ) AS day
 ) timestamp_range_table
-JOIN `vertex-feature-store.example_dataset.rating`
+JOIN `${project}.${dataset}.${table}`
 ON review_timestamp BETWEEN TIMESTAMP_SUB(day, INTERVAL 90 DAY) AND day 
 GROUP BY 1, 4
 
