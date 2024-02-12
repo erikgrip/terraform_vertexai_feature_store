@@ -240,16 +240,6 @@ resource "google_bigquery_table" "user_rating_view_latest" {
 ##### Vertex AI #####
 #-------------------#
 
-## Create Featurestore
-#resource "google_vertex_ai_featurestore" "" {
-#  provider = google-beta
-#  name     = "example_featurestore"
-#  region   = var.gcp_region
-#  online_serving_config {
-#    fixed_node_count = 1
-#  }
-#  force_destroy = true
-#}
 
 # Create FeatureGroups
 resource "google_vertex_ai_feature_group" "user" {
