@@ -32,23 +32,23 @@ resource "google_storage_bucket" "data" {
 # Copy local data to bucket
 resource "google_storage_bucket_object" "user" {
   provider = google
-  name     = "user.csv"
+  name     = "user.parquet"
   bucket   = google_storage_bucket.data.name
-  source   = "../data/user.csv"
+  source   = "../data/user.parquet"
 }
 
 resource "google_storage_bucket_object" "movie" {
   provider = google
-  name     = "movie.csv"
+  name     = "movie.parquet"
   bucket   = google_storage_bucket.data.name
   source   = "../data/movie.csv"
 }
 
 resource "google_storage_bucket_object" "rating" {
   provider = google
-  name     = "rating.csv"
+  name     = "rating.parquet"
   bucket   = google_storage_bucket.data.name
-  source   = "../data/rating.csv"
+  source   = "../data/rating.parquet"
 }
 
 #------------------#
@@ -68,18 +68,14 @@ resource "google_bigquery_table" "user" {
   provider   = google
   dataset_id = google_bigquery_dataset.dataset.dataset_id
   table_id   = "user"
-  schema     = file("../bigquery/user_schema.json")
+
   external_data_configuration {
     autodetect    = true
-    source_format = "CSV"
-
-    csv_options {
-      quote             = "\""
-      skip_leading_rows = 1
-    }
+    source_format = "PARQUET"
+    schema        = file("../bigquery/user_schema.json")
 
     source_uris = [
-      "gs://${google_storage_bucket.data.name}/user.csv"
+      "gs://${google_storage_bucket.data.name}/user.parquet"
     ]
   }
   deletion_protection = false
@@ -89,39 +85,52 @@ resource "google_bigquery_table" "movie" {
   provider   = google
   dataset_id = google_bigquery_dataset.dataset.dataset_id
   table_id   = "movie"
-  schema     = file("../bigquery/movie_schema.json")
+
   external_data_configuration {
     autodetect    = true
-    source_format = "CSV"
-
-    csv_options {
-      quote             = "\""
-      skip_leading_rows = 1
-    }
+    source_format = "PARQUET"
+    schema        = file("../bigquery/movie_schema.json")
 
     source_uris = [
-      "gs://${google_storage_bucket.data.name}/movie.csv"
+      "gs://${google_storage_bucket.data.name}/movie.parquet"
     ]
   }
   deletion_protection = false
 }
 
+resource "google_bigquery_table" "movie_emb" {
+  provider   = google
+  dataset_id = google_bigquery_dataset.dataset.dataset_id
+  table_id   = "movie_with_embedding"
+
+  external_data_configuration {
+    autodetect    = true
+    source_format = "PARQUET"
+    schema        = file("../bigquery/movie_with_embedding_schema.json")
+
+    source_uris = [
+      "gs://${google_storage_bucket.data.name}/movie_with_embedding.parquet"
+    ]
+    parquet_options {
+      enable_list_inference = true  # Make embedding column be read correctly
+    }
+  }
+  deletion_protection = false
+}
+
+
 resource "google_bigquery_table" "rating" {
   provider   = google
   dataset_id = google_bigquery_dataset.dataset.dataset_id
   table_id   = "rating"
-  schema     = file("../bigquery/rating_schema.json")
+
   external_data_configuration {
     autodetect    = true
-    source_format = "CSV"
-
-    csv_options {
-      quote             = "\""
-      skip_leading_rows = 1
-    }
+    source_format = "PARQUET"
+    schema        = file("../bigquery/rating_schema.json")
 
     source_uris = [
-      "gs://${google_storage_bucket.data.name}/rating.csv"
+      "gs://${google_storage_bucket.data.name}/rating.parquet"
     ]
   }
   deletion_protection = false
