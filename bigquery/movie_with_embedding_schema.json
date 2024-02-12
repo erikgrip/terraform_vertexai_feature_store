@@ -1,0 +1,37 @@
+[
+    {
+        "name": "movie_id",
+        "type": "INTEGER",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "movie_name",
+        "type": "STRING",
+        "mode": "REQUIRED"
+    },
+    {
+        "name": "genre",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "genre_code",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "language",
+        "type": "STRING",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "running_time",
+        "type": "INTEGER",
+        "mode": "NULLABLE"
+    },
+    {
+        "name": "embedding",
+        "type": "FLOAT",
+        "mode": "REPEATED"
+    }
+]

@@ -17,7 +17,7 @@ FROM (
     ) AS day
 ) timestamp_range_table
 JOIN `${project}.${dataset}.${table}`
-ON review_timestamp BETWEEN TIMESTAMP_SUB(day, INTERVAL 90 DAY) AND day 
+ON CAST(review_timestamp AS TIMESTAMP) BETWEEN TIMESTAMP_SUB(day, INTERVAL 90 DAY) AND day
 GROUP BY 1, 4
 
 
