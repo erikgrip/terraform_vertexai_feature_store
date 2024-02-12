@@ -41,7 +41,14 @@ resource "google_storage_bucket_object" "movie" {
   provider = google
   name     = "movie.parquet"
   bucket   = google_storage_bucket.data.name
-  source   = "../data/movie.csv"
+  source   = "../data/movie.parquet"
+}
+
+resource "google_storage_bucket_object" "movie_emb" {
+  provider = google
+  name     = "movie_with_embedding.parquet"
+  bucket   = google_storage_bucket.data.name
+  source   = "../data/movie_with_embedding.parquet"
 }
 
 resource "google_storage_bucket_object" "rating" {
@@ -173,6 +180,25 @@ resource "google_bigquery_table" "movie_view" {
   deletion_protection = false
 }
 
+resource "google_bigquery_table" "movie_with_embedding_view" {
+  provider   = google
+  dataset_id = google_bigquery_dataset.dataset.dataset_id
+  table_id   = "movie_with_embedding_view"
+  view {
+    query = templatefile(
+      "../bigquery/movie_with_embedding_view.sql",
+      {
+        project = var.gcp_project
+        dataset = google_bigquery_dataset.dataset.dataset_id
+        table   = google_bigquery_table.movie_emb.table_id
+      }
+    )
+    use_legacy_sql = false
+  }
+  deletion_protection = false
+}
+
+
 resource "google_bigquery_table" "user_rating_view" {
   provider   = google
   dataset_id = google_bigquery_dataset.dataset.dataset_id
@@ -251,6 +277,21 @@ resource "google_vertex_ai_feature_group" "movie" {
   }
 }
 
+
+resource "google_vertex_ai_feature_group" "movie_emb" {
+  name        = "movie_emb_feature_group"
+  description = "Feature group with movie embedding features"
+  region      = var.gcp_region
+  big_query {
+    big_query_source {
+      input_uri = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.movie_with_embedding_view.table_id}"
+    }
+    entity_id_columns = ["entity_id"]
+  }
+
+}
+
+
 resource "google_vertex_ai_feature_group" "user_rating" {
   name        = "user_rating_feature_group"
   description = "Feature group with user rating features"
@@ -293,9 +334,12 @@ resource "google_vertex_ai_feature_online_store" "featureonlinestore" {
   bigtable {
     auto_scaling {
       min_node_count         = 1
-      max_node_count         = 2
+      max_node_count         = 1
       cpu_utilization_target = 80
     }
+  }
+  embedding_management {
+    enabled = true
   }
   force_destroy = true
   depends_on    = [google_project_service.vertexai]
@@ -329,6 +373,30 @@ resource "google_vertex_ai_feature_online_store_featureview" "user_rating_featur
     entity_id_columns = ["entity_id"]
   }
 
+}
+
+resource "google_vertex_ai_feature_online_store_featureview" "movie_emb_featureview" {
+  provider             = google-beta
+  name                 = "movie_emb_featureview"
+  region               = var.gcp_region
+  feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
+  sync_config {
+    cron = "1/5 * * * *" # every 5th minute
+  }
+  big_query_source {
+    uri               = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.movie_with_embedding_view.table_id}"
+    entity_id_columns = ["entity_id"]
+  }
+  vector_search_config {
+    embedding_column      = "embedding"
+    filter_columns        = ["genre", "language"]
+    crowding_column       = "genre_code"
+    distance_measure_type = "DOT_PRODUCT_DISTANCE"
+    tree_ah_config {
+      leaf_node_embedding_count = "1000"
+    }
+    embedding_dimension = "1536"
+  }
 }
 
 
