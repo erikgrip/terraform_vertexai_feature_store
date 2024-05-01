@@ -200,7 +200,7 @@ resource "google_vertex_ai_feature_group" "user" {
   }
 }
 
-resource "google_vertex_ai_feature_group" "movie_emb" {
+resource "google_vertex_ai_feature_group" "movie" {
   name        = "movie_emb_feature_group"
   description = "Feature group with movie embedding features"
   region      = var.gcp_region
@@ -316,10 +316,10 @@ resource "google_vertex_ai_feature_group_feature" "running_time" {
   }
 }
 
-resource "google_vertex_ai_feature_group_feature" "movie_emb" {
+resource "google_vertex_ai_feature_group_feature" "movie_embedding" {
   name          = "embedding"
   region        = var.gcp_region
-  feature_group = google_vertex_ai_feature_group.movie_emb.name
+  feature_group = google_vertex_ai_feature_group.movie.name
   description   = "The movie's title as an embedding vector"
   labels = {
     label-one = "value-one"
@@ -378,15 +378,43 @@ resource "google_vertex_ai_feature_online_store_featureview" "user_featureview" 
   }
   feature_registry_source {
     feature_groups {
-      feature_group_id = google_vertex_ai_feature_group.sample_feature_group.name
-      feature_ids      = [google_vertex_ai_feature_group_feature.sample_feature.name]
+      feature_group_id = google_vertex_ai_feature_group.user.name
+      feature_ids      = [
+        google_vertex_ai_feature_group_feature.username.name,
+        google_vertex_ai_feature_group_feature.email.name,
+        google_vertex_ai_feature_group_feature.age.name,
+        google_vertex_ai_feature_group_feature.gender.name
+      ]
     }
   }
 }
 
+resource "google_vertex_ai_feature_online_store_featureview" "movie_featureview" {
+  provider             = google
+  name                 = "movie_featureview"
+  region               = var.gcp_region
+  feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
+  sync_config {
+    cron = "1/5 * * * *" # every 5th minute
+  }
+  feature_registry_source {
+    feature_groups {
+      feature_group_id = google_vertex_ai_feature_group.movie.name
+      feature_ids      = [
+        google_vertex_ai_feature_group_feature.name.name,
+        google_vertex_ai_feature_group_feature.genre.name,
+        google_vertex_ai_feature_group_feature.genre_code.name,
+        google_vertex_ai_feature_group_feature.language.name,
+        google_vertex_ai_feature_group_feature.running_time.name
+      ]
+    }
+  }
+  
+}
+
 resource "google_vertex_ai_feature_online_store_featureview" "movie_emb_featureview" {
   provider             = google-beta
-  name                 = "movie_emb_featureview"
+  name                 = "movie_embedding_featureview"
   region               = var.gcp_region
   feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
   sync_config {
@@ -418,8 +446,11 @@ resource "google_vertex_ai_feature_online_store_featureview" "user_rating_featur
   }
   feature_registry_source {
     feature_groups {
-      feature_group_id = google_vertex_ai_feature_group.sample_feature_group.name
-      feature_ids      = [google_vertex_ai_feature_group_feature.sample_feature.name]
+      feature_group_id = google_vertex_ai_feature_group.user_rating.name
+      feature_ids      = [
+        google_vertex_ai_feature_group_feature.num_user_rating.name,
+        google_vertex_ai_feature_group_feature.avg_user_rating.name
+      ]
     }
   }
 }
