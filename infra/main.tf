@@ -281,7 +281,6 @@ resource "google_vertex_ai_feature_group" "movie_emb" {
 
 }
 
-
 resource "google_vertex_ai_feature_group" "user_rating" {
   name        = "user_rating_feature_group"
   description = "Feature group with user rating features"
@@ -293,6 +292,7 @@ resource "google_vertex_ai_feature_group" "user_rating" {
     entity_id_columns = ["entity_id"]
   }
 }
+
 
 # Create Feature Group Features
 resource "google_vertex_ai_feature_group_feature" "username" {
@@ -310,6 +310,46 @@ resource "google_vertex_ai_feature_group_feature" "email" {
   region        = var.gcp_region
   feature_group = google_vertex_ai_feature_group.user.name
   description   = "The user's email address"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_vertex_ai_feature_group_feature" "age" {
+  name          = "age"
+  region        = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.user.name
+  description   = "The user's age"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_vertex_ai_feature_group_feature" "gender" {
+  name        = "gender"
+  region      = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.user.name
+  description   = "The user's gender"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_vertex_ai_feature_group_feature" "num_user_rating" {
+  name        = "num_rating_90d"
+  region      = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.user_rating.name
+  description   = "The number of ratings the user made in the last 90 days"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_vertex_ai_feature_group_feature" "avg_user_rating" {
+  name        = "avg_rating_90d"
+  region      = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.user_rating.name
+  description   = "The user's average raitng in the last 90 days"
   labels = {
     label-one = "value-one"
   }
@@ -344,9 +384,16 @@ resource "google_vertex_ai_feature_online_store_featureview" "user_featureview" 
   sync_config {
     cron = "1/5 * * * *" # every 5th minute
   }
-  big_query_source {
-    uri               = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_view.table_id}"
-    entity_id_columns = ["entity_id"]
+  # big_query_source {
+  #   uri               = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_view.table_id}"
+  #   entity_id_columns = ["entity_id"]
+  # }
+  feature_registry_source {
+
+    feature_groups { 
+        feature_group_id = google_vertex_ai_feature_group.sample_feature_group.name
+        feature_ids      = [google_vertex_ai_feature_group_feature.sample_feature.name]
+       }
   }
 }
 
@@ -358,9 +405,16 @@ resource "google_vertex_ai_feature_online_store_featureview" "user_rating_featur
   sync_config {
     cron = "1/5 * * * *" # every 5th minute
   }
-  big_query_source {
-    uri               = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_rating_view.table_id}"
-    entity_id_columns = ["entity_id"]
+  # big_query_source {
+  #   uri               = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_rating_view.table_id}"
+  #   entity_id_columns = ["entity_id"]
+  # }
+  feature_registry_source {
+
+    feature_groups { 
+        feature_group_id = google_vertex_ai_feature_group.sample_feature_group.name
+        feature_ids      = [google_vertex_ai_feature_group_feature.sample_feature.name]
+       }
   }
 
 }
