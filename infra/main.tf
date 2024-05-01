@@ -23,6 +23,7 @@ resource "google_project_service" "vertexai" {
 #-----------------#
 
 # Bucket to store sample data
+
 resource "google_storage_bucket" "data" {
   provider = google                   # Can be left out if only using one provider
   name     = "example-bq-data-bucket" # Needs to be globally unique
@@ -30,6 +31,7 @@ resource "google_storage_bucket" "data" {
 }
 
 # Copy local data to bucket
+
 resource "google_storage_bucket_object" "user" {
   provider = google
   name     = "user.parquet"
@@ -55,7 +57,8 @@ resource "google_storage_bucket_object" "rating" {
 ##### BigQuery #####
 #------------------#
 
-# Create BigQuery dataset
+# BQ Dataset
+
 resource "google_bigquery_dataset" "dataset" {
   provider   = google
   dataset_id = "example_dataset"
@@ -63,7 +66,8 @@ resource "google_bigquery_dataset" "dataset" {
   depends_on = [google_project_service.bigquery]
 }
 
-# Create BigQuery tables
+# BQ Tables
+
 resource "google_bigquery_table" "user" {
   provider   = google
   dataset_id = google_bigquery_dataset.dataset.dataset_id
@@ -101,7 +105,6 @@ resource "google_bigquery_table" "movie_emb" {
   deletion_protection = false
 }
 
-
 resource "google_bigquery_table" "rating" {
   provider   = google
   dataset_id = google_bigquery_dataset.dataset.dataset_id
@@ -119,7 +122,8 @@ resource "google_bigquery_table" "rating" {
   deletion_protection = false
 }
 
-# Create BigQuery views
+# BQ Views
+
 resource "google_bigquery_table" "user_view" {
   provider   = google
   dataset_id = google_bigquery_dataset.dataset.dataset_id
@@ -180,7 +184,8 @@ resource "google_bigquery_table" "user_rating_view" {
 #-------------------#
 
 
-# Create FeatureGroups
+# Feature Groups
+
 resource "google_vertex_ai_feature_group" "user" {
   name        = "user_feature_group"
   description = "Feature group with user features"
@@ -219,7 +224,8 @@ resource "google_vertex_ai_feature_group" "user_rating" {
 }
 
 
-# Create Feature Group Features
+# Feature Group Features
+
 resource "google_vertex_ai_feature_group_feature" "username" {
   name          = "username"
   region        = var.gcp_region
@@ -260,6 +266,66 @@ resource "google_vertex_ai_feature_group_feature" "gender" {
   }
 }
 
+resource "google_vertex_ai_feature_group_feature" "name" {
+  name          = "name"
+  region        = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.movie.name
+  description   = "The movie's title"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_vertex_ai_feature_group_feature" "genre" {
+  name          = "genre"
+  region        = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.movie.name
+  description   = "The movie's genre"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_vertex_ai_feature_group_feature" "genre_code" {
+  name          = "genre_code"
+  region        = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.movie.name
+  description   = "The movie's genre code"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_vertex_ai_feature_group_feature" "language" {
+  name          = "language"
+  region        = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.movie.name
+  description   = "The movie's language"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_vertex_ai_feature_group_feature" "running_time" {
+  name          = "running_time"
+  region        = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.movie.name
+  description   = "The movie's running time in minutes"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
+resource "google_vertex_ai_feature_group_feature" "movie_emb" {
+  name          = "embedding"
+  region        = var.gcp_region
+  feature_group = google_vertex_ai_feature_group.movie_emb.name
+  description   = "The movie's title as an embedding vector"
+  labels = {
+    label-one = "value-one"
+  }
+}
+
 resource "google_vertex_ai_feature_group_feature" "num_user_rating" {
   name          = "num_rating_90d"
   region        = var.gcp_region
@@ -274,14 +340,15 @@ resource "google_vertex_ai_feature_group_feature" "avg_user_rating" {
   name          = "avg_rating_90d"
   region        = var.gcp_region
   feature_group = google_vertex_ai_feature_group.user_rating.name
-  description   = "The user's average raitng in the last 90 days"
+  description   = "The user's average rating in the last 90 days"
   labels = {
     label-one = "value-one"
   }
 }
 
 
-# Create Online Store
+# Online Store
+
 resource "google_vertex_ai_feature_online_store" "featureonlinestore" {
   provider = google-beta
   name     = "example_online_store"
@@ -300,7 +367,8 @@ resource "google_vertex_ai_feature_online_store" "featureonlinestore" {
   depends_on    = [google_project_service.vertexai]
 }
 
-# Create FeatureViews
+# Feature Views
+
 resource "google_vertex_ai_feature_online_store_featureview" "user_featureview" {
   provider             = google
   name                 = "user_featureview"
