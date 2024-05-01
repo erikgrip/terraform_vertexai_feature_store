@@ -3,6 +3,7 @@
 #-----------------#
 
 # Enable required APIs
+
 resource "google_project_service" "bigquery" {
   provider                   = google
   project                    = var.gcp_project
@@ -52,6 +53,7 @@ resource "google_storage_bucket_object" "rating" {
   bucket   = google_storage_bucket.data.name
   source   = "../data/rating.parquet"
 }
+
 
 #------------------#
 ##### BigQuery #####
@@ -183,7 +185,6 @@ resource "google_bigquery_table" "user_rating_view" {
 ##### Vertex AI #####
 #-------------------#
 
-
 # Feature Groups
 
 resource "google_vertex_ai_feature_group" "user" {
@@ -222,7 +223,6 @@ resource "google_vertex_ai_feature_group" "user_rating" {
     entity_id_columns = ["entity_id"]
   }
 }
-
 
 # Feature Group Features
 
@@ -346,7 +346,6 @@ resource "google_vertex_ai_feature_group_feature" "avg_user_rating" {
   }
 }
 
-
 # Online Store
 
 resource "google_vertex_ai_feature_online_store" "featureonlinestore" {
@@ -406,6 +405,22 @@ resource "google_vertex_ai_feature_online_store_featureview" "movie_emb_featurev
       leaf_node_embedding_count = "1000"
     }
     embedding_dimension = "1536"
+  }
+}
+
+resource "google_vertex_ai_feature_online_store_featureview" "user_rating_featureview" {
+  provider             = google
+  name                 = "user_rating_featureview"
+  region               = var.gcp_region
+  feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
+  sync_config {
+    cron = "1/5 * * * *" # every 5th minute
+  }
+  feature_registry_source {
+    feature_groups {
+      feature_group_id = google_vertex_ai_feature_group.sample_feature_group.name
+      feature_ids      = [google_vertex_ai_feature_group_feature.sample_feature.name]
+    }
   }
 }
 
