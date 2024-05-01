@@ -37,13 +37,6 @@ resource "google_storage_bucket_object" "user" {
   source   = "../data/user.parquet"
 }
 
-resource "google_storage_bucket_object" "movie" {
-  provider = google
-  name     = "movie.parquet"
-  bucket   = google_storage_bucket.data.name
-  source   = "../data/movie.parquet"
-}
-
 resource "google_storage_bucket_object" "movie_emb" {
   provider = google
   name     = "movie_with_embedding.parquet"
@@ -88,23 +81,6 @@ resource "google_bigquery_table" "user" {
   deletion_protection = false
 }
 
-resource "google_bigquery_table" "movie" {
-  provider   = google
-  dataset_id = google_bigquery_dataset.dataset.dataset_id
-  table_id   = "movie"
-
-  external_data_configuration {
-    autodetect    = true
-    source_format = "PARQUET"
-    schema        = file("../bigquery/movie_schema.json")
-
-    source_uris = [
-      "gs://${google_storage_bucket.data.name}/movie.parquet"
-    ]
-  }
-  deletion_protection = false
-}
-
 resource "google_bigquery_table" "movie_emb" {
   provider   = google
   dataset_id = google_bigquery_dataset.dataset.dataset_id
@@ -119,7 +95,7 @@ resource "google_bigquery_table" "movie_emb" {
       "gs://${google_storage_bucket.data.name}/movie_with_embedding.parquet"
     ]
     parquet_options {
-      enable_list_inference = true  # Make embedding column be read correctly
+      enable_list_inference = true # Make embedding column be read correctly
     }
   }
   deletion_protection = false
@@ -162,24 +138,6 @@ resource "google_bigquery_table" "user_view" {
   deletion_protection = false
 }
 
-resource "google_bigquery_table" "movie_view" {
-  provider   = google
-  dataset_id = google_bigquery_dataset.dataset.dataset_id
-  table_id   = "movie_view"
-  view {
-    query = templatefile(
-      "../bigquery/movie_view.sql",
-      {
-        project = var.gcp_project
-        dataset = google_bigquery_dataset.dataset.dataset_id
-        table   = google_bigquery_table.movie.table_id
-      }
-    )
-    use_legacy_sql = false
-  }
-  deletion_protection = false
-}
-
 resource "google_bigquery_table" "movie_with_embedding_view" {
   provider   = google
   dataset_id = google_bigquery_dataset.dataset.dataset_id
@@ -198,7 +156,6 @@ resource "google_bigquery_table" "movie_with_embedding_view" {
   deletion_protection = false
 }
 
-
 resource "google_bigquery_table" "user_rating_view" {
   provider   = google
   dataset_id = google_bigquery_dataset.dataset.dataset_id
@@ -210,24 +167,6 @@ resource "google_bigquery_table" "user_rating_view" {
         project = var.gcp_project
         dataset = google_bigquery_dataset.dataset.dataset_id
         table   = google_bigquery_table.rating.table_id
-      }
-    )
-    use_legacy_sql = false
-  }
-  deletion_protection = false
-}
-
-resource "google_bigquery_table" "user_rating_view_latest" {
-  provider   = google
-  dataset_id = google_bigquery_dataset.dataset.dataset_id
-  table_id   = "user_rating_view_latest"
-  view {
-    query = templatefile(
-      "../bigquery/user_rating_view_latest.sql",
-      {
-        project = var.gcp_project
-        dataset = google_bigquery_dataset.dataset.dataset_id
-        table   = google_bigquery_table.user_rating_view.table_id
       }
     )
     use_legacy_sql = false
@@ -255,19 +194,6 @@ resource "google_vertex_ai_feature_group" "user" {
   }
 }
 
-resource "google_vertex_ai_feature_group" "movie" {
-  name        = "movie_feature_group"
-  description = "Feature group with movie features"
-  region      = var.gcp_region
-  big_query {
-    big_query_source {
-      input_uri = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.movie_view.table_id}"
-    }
-    entity_id_columns = ["entity_id"]
-  }
-}
-
-
 resource "google_vertex_ai_feature_group" "movie_emb" {
   name        = "movie_emb_feature_group"
   description = "Feature group with movie embedding features"
@@ -278,7 +204,6 @@ resource "google_vertex_ai_feature_group" "movie_emb" {
     }
     entity_id_columns = ["entity_id"]
   }
-
 }
 
 resource "google_vertex_ai_feature_group" "user_rating" {
@@ -326,8 +251,8 @@ resource "google_vertex_ai_feature_group_feature" "age" {
 }
 
 resource "google_vertex_ai_feature_group_feature" "gender" {
-  name        = "gender"
-  region      = var.gcp_region
+  name          = "gender"
+  region        = var.gcp_region
   feature_group = google_vertex_ai_feature_group.user.name
   description   = "The user's gender"
   labels = {
@@ -336,8 +261,8 @@ resource "google_vertex_ai_feature_group_feature" "gender" {
 }
 
 resource "google_vertex_ai_feature_group_feature" "num_user_rating" {
-  name        = "num_rating_90d"
-  region      = var.gcp_region
+  name          = "num_rating_90d"
+  region        = var.gcp_region
   feature_group = google_vertex_ai_feature_group.user_rating.name
   description   = "The number of ratings the user made in the last 90 days"
   labels = {
@@ -346,8 +271,8 @@ resource "google_vertex_ai_feature_group_feature" "num_user_rating" {
 }
 
 resource "google_vertex_ai_feature_group_feature" "avg_user_rating" {
-  name        = "avg_rating_90d"
-  region      = var.gcp_region
+  name          = "avg_rating_90d"
+  region        = var.gcp_region
   feature_group = google_vertex_ai_feature_group.user_rating.name
   description   = "The user's average raitng in the last 90 days"
   labels = {
@@ -384,39 +309,12 @@ resource "google_vertex_ai_feature_online_store_featureview" "user_featureview" 
   sync_config {
     cron = "1/5 * * * *" # every 5th minute
   }
-  # big_query_source {
-  #   uri               = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_view.table_id}"
-  #   entity_id_columns = ["entity_id"]
-  # }
   feature_registry_source {
-
-    feature_groups { 
-        feature_group_id = google_vertex_ai_feature_group.sample_feature_group.name
-        feature_ids      = [google_vertex_ai_feature_group_feature.sample_feature.name]
-       }
+    feature_groups {
+      feature_group_id = google_vertex_ai_feature_group.sample_feature_group.name
+      feature_ids      = [google_vertex_ai_feature_group_feature.sample_feature.name]
+    }
   }
-}
-
-resource "google_vertex_ai_feature_online_store_featureview" "user_rating_featureview_latest" {
-  provider             = google
-  name                 = "user_rating_featureview_latest"
-  region               = var.gcp_region
-  feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
-  sync_config {
-    cron = "1/5 * * * *" # every 5th minute
-  }
-  # big_query_source {
-  #   uri               = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.user_rating_view.table_id}"
-  #   entity_id_columns = ["entity_id"]
-  # }
-  feature_registry_source {
-
-    feature_groups { 
-        feature_group_id = google_vertex_ai_feature_group.sample_feature_group.name
-        feature_ids      = [google_vertex_ai_feature_group_feature.sample_feature.name]
-       }
-  }
-
 }
 
 resource "google_vertex_ai_feature_online_store_featureview" "movie_emb_featureview" {
