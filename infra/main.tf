@@ -244,8 +244,8 @@ resource "google_vertex_ai_feature_group_feature" "gender" {
   }
 }
 
-resource "google_vertex_ai_feature_group_feature" "name" {
-  name          = "name"
+resource "google_vertex_ai_feature_group_feature" "movie_name" {
+  name          = "movie_name"
   region        = var.gcp_region
   feature_group = google_vertex_ai_feature_group.movie.name
   description   = "The movie's title"
@@ -372,16 +372,14 @@ resource "google_vertex_ai_feature_online_store_featureview" "movie_featureview"
   region               = var.gcp_region
   feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
   sync_config {
-    cron = "1/5 * * * *" # every 5th minute
+    cron = "1/5 * * * *"
   }
   feature_registry_source {
     feature_groups {
       feature_group_id = google_vertex_ai_feature_group.movie.name
       feature_ids      = [
-        google_vertex_ai_feature_group_feature.name.name,
-        google_vertex_ai_feature_group_feature.genre.name,
+        google_vertex_ai_feature_group_feature.movie_name.name,
         google_vertex_ai_feature_group_feature.genre_code.name,
-        google_vertex_ai_feature_group_feature.language.name,
         google_vertex_ai_feature_group_feature.running_time.name
       ]
     }
@@ -395,7 +393,7 @@ resource "google_vertex_ai_feature_online_store_featureview" "movie_emb_featurev
   region               = var.gcp_region
   feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
   sync_config {
-    cron = "1/5 * * * *" # every 5th minute
+    cron = "1/5 * * * *"
   }
   big_query_source {
     uri               = "bq://${var.gcp_project}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.movie_with_embedding_view.table_id}"
@@ -419,7 +417,7 @@ resource "google_vertex_ai_feature_online_store_featureview" "user_rating_featur
   region               = var.gcp_region
   feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
   sync_config {
-    cron = "1/5 * * * *" # every 5th minute
+    cron = "1/5 * * * *"
   }
   feature_registry_source {
     feature_groups {
@@ -431,7 +429,3 @@ resource "google_vertex_ai_feature_online_store_featureview" "user_rating_featur
     }
   }
 }
-
-
-
-
