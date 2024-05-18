@@ -25,17 +25,15 @@ gcloud iam service-accounts keys create $SERVICE_ACCOUNT_KEY_FILE \
     --key-file-type json
 
 
-# Let the service account enable APIs
-gcloud services enable cloudresourcemanager.googleapis.com \
+# Enable the storage, Bigquery and Vertex AI APIs
+gcloud services enable storage.googleapis.com \
     --project $PROJECT_ID
 
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com \
-    --role roles/serviceusage.serviceUsageAdmin
+gcloud services enable bigquery.googleapis.com \
+    --project $PROJECT_ID
 
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com \
-    --role roles/servicemanagement.quotaAdmin
+gcloud services enable aiplatform.googleapis.com \
+    --project $PROJECT_ID
 
 
 # Grant service account access to the manage Vertex AI, BigQuery and Storage

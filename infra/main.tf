@@ -1,25 +1,4 @@
 #-----------------#
-####### API #######
-#-----------------#
-
-# Enable required APIs
-
-resource "google_project_service" "bigquery" {
-  provider                   = google
-  project                    = var.gcp_project
-  service                    = "bigquery.googleapis.com"
-  disable_dependent_services = true
-}
-
-resource "google_project_service" "vertexai" {
-  provider                   = google
-  project                    = var.gcp_project
-  service                    = "aiplatform.googleapis.com"
-  disable_dependent_services = true
-}
-
-
-#-----------------#
 ##### Storage #####
 #-----------------#
 
@@ -65,7 +44,6 @@ resource "google_bigquery_dataset" "dataset" {
   provider   = google
   dataset_id = "example_dataset"
   location   = "EU"
-  depends_on = [google_project_service.bigquery]
 }
 
 # BQ Tables
@@ -363,7 +341,6 @@ resource "google_vertex_ai_feature_online_store" "featureonlinestore" {
     enabled = true
   }
   force_destroy = true
-  depends_on    = [google_project_service.vertexai]
 }
 
 # Feature Views
