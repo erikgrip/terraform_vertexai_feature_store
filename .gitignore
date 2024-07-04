@@ -1,7 +1,8 @@
 .env
 tmp.*
 
-secrets/*
 infra/.terraform
 infra/terraform.tfstate
 infra/terraform.tfstate.backup
+secrets/*
+tmp/*
