@@ -366,26 +366,6 @@ resource "google_vertex_ai_feature_online_store_featureview" "user_featureview" 
   }
 }
 
-resource "google_vertex_ai_feature_online_store_featureview" "movie_featureview" {
-  provider             = google
-  name                 = "movie_featureview"
-  region               = var.gcp_region
-  feature_online_store = google_vertex_ai_feature_online_store.featureonlinestore.name
-  sync_config {
-    cron = "1/5 * * * *"
-  }
-  feature_registry_source {
-    feature_groups {
-      feature_group_id = google_vertex_ai_feature_group.movie.name
-      feature_ids      = [
-        google_vertex_ai_feature_group_feature.movie_name.name,
-        google_vertex_ai_feature_group_feature.genre_code.name,
-        google_vertex_ai_feature_group_feature.running_time.name
-      ]
-    }
-  }
-  
-}
 
 resource "google_vertex_ai_feature_online_store_featureview" "movie_emb_featureview" {
   provider             = google-beta
