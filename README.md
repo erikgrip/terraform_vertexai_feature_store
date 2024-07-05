@@ -1,6 +1,6 @@
 # terraform-vertexai-feature-store
 
-With this project, you can effortlessly create a Feature Store in Google Cloud Platform's Vertex AI using Terraform. Follow this guide to set up your feature store, retrieve features, and clean up resources efficiently.
+With this project, you can effortlessly create a Feature Store in Google Cloud Platform's Vertex AI using Terraform. You can also use Google's Python SDK to retrieve some features served by the online store.
 
 ## Table of Contents
 
