@@ -4,6 +4,7 @@
 PROJECT_ID=$(grep gcp_project infra/terraform.tfvars | cut -d'=' -f2 | tr -d '"')
 REGION=$(grep gcp_region infra/terraform.tfvars | cut -d'=' -f2 | tr -d '"')
 
+# Set the service account name and where to store the key
 SERVICE_ACCOUNT_NAME=terraform
 SERVICE_ACCOUNT_KEY_FILE=secrets/service_account.json
 
