@@ -1,5 +1,11 @@
 #!/bin/bash
-. .env  # load .env file for the environment
+
+# Read variables from terraform.tfvars file
+PROJECT_ID=$(grep gcp_project infra/terraform.tfvars | cut -d'=' -f2 | tr -d '"')
+REGION=$(grep gcp_region infra/terraform.tfvars | cut -d'=' -f2 | tr -d '"')
+
+SERVICE_ACCOUNT_NAME=terraform
+SERVICE_ACCOUNT_KEY_FILE=secrets/service_account.json
 
 
 # Create a new project
