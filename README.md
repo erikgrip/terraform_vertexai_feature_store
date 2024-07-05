@@ -2,10 +2,9 @@
 Use terraform to set up a feature store in GCP's Vertex AI
 
 ## Set Up  
-Create a GCP Account and add a project
-Enable APIs
+Create a GCP Account and add a billing account to link this project's costs to.
 
-**Install Google's gcloud CLI**:  
+**Install Google's gcloud CLI**   
 https://cloud.google.com/sdk/docs/install
 
 Initialize gcloud
@@ -17,6 +16,8 @@ gcloud init
 Follow the instructions on Hashicorp's webite ([here](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli))
 
 
-Create a service account with access   
-Make sure to keep the key file safe. We'll store it in a local directory called "secrets" and add it to .gitignore so it's not accidentally committed to source control. That's fine for this demo, but in a real project you should use [best practices](https://cloud.google.com/iam/docs/best-practices-for-managing-service-account-keys) for storing and managing secrets.
+**Install Poetry**  
+If you want to run the `serving.ipynb` notebook then [install Poetry](https://python-poetry.org/docs/#installation) to get the right dependencies.
+
+
 
